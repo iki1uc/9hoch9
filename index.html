@@ -1,1 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>9hoch9 – Universal Ghost Scan</title>
+    <style>
+        body {
+            background: #111;
+            color: #0f0;
+            font-family: monospace;
+            padding: 20px;
+        }
+        h2 {
+            color: #0f0;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 8px;
+        }
+        .cell {
+            background: #222;
+            border: 1px solid #444;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            white-space: pre-wrap;
+            min-height: 80px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>9hoch9 – Universal Ghost Scan</h2>
+
+<div id="grid" class="grid"></div>
+
+<script>
+// 81 Slots (9x9)
+const targets = [
+    "https://iki1uc.github.io/BOERSE/",
+    "https://iki1uc.github.io/Scan-Ghost/",
+    "https://iki1uc.github.io/BOERSE-TOOLS/",
+    "https://iki1uc.github.io/ki3KIme/",
+    "https://iki1uc.github.io/ECO-MARKT3-EXP168/",
+    "https://iki1uc.github.io/ID-GATE/",
+    // Restliche Slots leer oder später befüllbar
+];
+
+const grid = document.getElementById("grid");
+
+// 81 Zellen erzeugen
+for (let i = 0; i < 81; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.id = "cell" + i;
+    cell.textContent = "Slot " + (i+1) + "\nwaiting…";
+    grid.appendChild(cell);
+}
+
+// Scan-Funktion
+async function scanAll() {
+    for (let i = 0; i < 81; i++) {
+        const cell = document.getElementById("cell" + i);
+
+        if (!targets[i]) {
+            cell.textContent = "Slot " + (i+1) + "\n(empty)";
+            continue;
+        }
+
+        try {
+            const res = await fetch(targets[i]);
+            cell.textContent =
+                `Slot ${i+1}\n${targets[i]}\n` +
+                (res.ok ? "ONLINE ✓" : "ERROR ✗") +
+                ` (${res.status})`;
+        } catch (err) {
+            cell.textContent =
+                `Slot ${i+1}\n${targets[i]}\nEXCEPTION ✗\n${err.message}`;
+        }
+    }
+}
+
+// Start + Auto-Update
+scanAll();
+setInterval(scanAll, 3000);
+</script>
+
+</body>
+</html>
 
