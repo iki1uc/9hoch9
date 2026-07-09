@@ -97,3 +97,16 @@ Und genau das macht es stark.
 
 Beispiel:
 
+9hoch9 ist die Einzel‑Cube‑Identität
+
+9hoch9 ist die Achsen‑Matrix (Φ, φ, φ², φ∞)
+
+9hoch9 ist die LAGE‑Matrix (x, y, z, stabil)
+
+9hoch9 ist die GHOST‑Matrix (Orbit, EVO, Operatoren)
+
+9hoch9 ist die tmp‑Spur‑Quelle
+
+9hoch9 ist die Basis für 81_81_1 (81 Cubes = 81×9hoch9)
+
+9hoch9 ist die RESPO‑Brücke, die dem System erklärt, was ein Cube bedeutet
