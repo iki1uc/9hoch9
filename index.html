@@ -1,78 +1,33 @@
 <!DOCTYPE html>
-<html lang="de">
+<html>
 <head>
 <meta charset="UTF-8">
-<title>NC‑LAGE · 81×9hoch9 Visualisierung</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9hoch9 · Scanner · QI/IQQ/OCTA · Pipeline 3/6/9/12</title>
 
 <style>
-  body { background:#000; color:#eee; font-family:monospace; padding:20px; }
-  h1 { text-align:center; color:#00eaff; margin-bottom:30px; }
-  .grid81 {
-    display:grid;
-    grid-template-columns: repeat(9, 1fr);
-    gap:10px;
-  }
-  .cube {
+body { background:#000; color:#0f0; font-family:monospace; padding:40px; }
+h1 { color:#6cf; text-align:center; }
+pre {
     background:#111;
-    border:1px solid #333;
-    padding:10px;
-    border-radius:8px;
-  }
-  .lage {
-    color:#00ff9d;
-    font-weight:bold;
-    margin-bottom:8px;
-  }
-  .mini9 {
-    display:grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap:4px;
-  }
-  .slot {
-    background:#222;
-    padding:6px;
-    text-align:center;
-    border-radius:4px;
-    font-size:12px;
-  }
+    padding:20px;
+    border-left:3px solid #6cf;
+}
 </style>
+
+<script src="9hoch9.js"></script>
+
 </head>
 
 <body>
 
-<h1>NC‑LAGE · 81×9hoch9 Visualisierung</h1>
+<h1>9hoch9 · Scanner · QI/IQQ/OCTA · Pipeline 3/6/9/12</h1>
 
-<div class="grid81" id="grid"></div>
+<pre id="out">Lade…</pre>
 
 <script>
-const lage = ["ΔA","NΞ","βN","IX°","XΙ","RΩ","∪"];
-
-function createCube(i){
-  const cube = document.createElement("div");
-  cube.className = "cube";
-
-  const l = lage[i % 7];
-  cube.innerHTML = `<div class="lage">Cube ${i+1} · ${l}</div>`;
-
-  const mini = document.createElement("div");
-  mini.className = "mini9";
-
-  for(let m=0; m<9; m++){
-    const slot = document.createElement("div");
-    slot.className = "slot";
-    slot.innerText = "✓";
-    mini.appendChild(slot);
-  }
-
-  cube.appendChild(mini);
-  return cube;
-}
-
-const grid = document.getElementById("grid");
-for(let i=0; i<81; i++){
-  grid.appendChild(createCube(i));
-}
+const result = NINEHOCH9.build();
+document.getElementById("out").innerText =
+    JSON.stringify(result, null, 2);
 </script>
 
 </body>
