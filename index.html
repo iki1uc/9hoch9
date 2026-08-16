@@ -1,446 +1,664 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>9hoch9 · ULTRA · Respo Engine — ATOM</title>
-<meta name="description" content="9×9 Respo Engine — QI/IQQ, φ‑Multiskala, Axis Discovery, TF‑IDF/KMeans fallback, meKI‑friendly metadata" />
-<!-- Machine‑readable metadata for meKI / automated agents -->
-<script type="application/ld+json">
-{
-  "@context": "http://schema.org",
-  "@type": "SoftwareSourceCode",
-  "name": "9hoch9 Respo Engine",
-  "description": "Interactive 9×9 Respo evaluation & discovery engine using QI/IQQ, phi weights, axis discovery and multiscale aggregation. Exposes machine JSON for meKI.",
-  "programmingLanguage": "JavaScript",
-  "codeRepository": "https://github.com/iki1uc/ATOM",
-  "keywords": ["respo","eval","QI","IQQ","phi","multiscale","axis","discovery","meKI"]
-}
-</script>
+<meta charset="UTF-8">
+<title>RESPO · TRIGGER ENGINE · 3-Achsen · Ebenen-Synchron</title>
 
 <style>
-  :root{--bg:#000;--fg:#7ff;--accent:#6cf}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font-family:Consolas,monospace}
-  header{display:flex;align-items:center;gap:12px;padding:12px}
-  .card{background:#041;padding:12px;border-radius:8px;border:1px solid #063}
-  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  select,input,button,textarea{background:#001;color:var(--fg);border:1px solid #034;padding:6px;border-radius:6px}
-  #grid{display:grid;gap:4px;align-self:flex-start;margin-top:12px}
-  .cell{width:56px;height:56px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;user-select:none;background:#071;border:1px solid #033}
-  .cell.empty{background:#011;border:1px dashed #022;color:#446}
-  #detail{min-width:340px;max-width:420px;margin-left:12px}
-  .muted{color:#5a7;font-size:13px}
-  footer{padding:12px;color:#6f6;font-size:13px}
-  .row{display:flex;gap:8px;align-items:center}
-  .small{font-size:12px;color:#9fb}
-  #plot{background:#000;border:1px solid #033;border-radius:8px}
-  pre{background:#001;padding:8px;border-radius:6px;overflow:auto;max-height:240px}
-  .book{margin-top:12px;padding:8px;border-radius:6px;background:#021;border:1px solid #024}
-  .btn-primary{background:var(--accent);color:#000;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+:root {
+    --bg: #0a0a0f;
+    --fg: #0ff;
+    --accent: #6cf;
+    --level1: #f44;
+    --level2: #4f4;
+    --level3: #44f;
+    --axis-x: #ff6b6b;
+    --axis-y: #6bff6b;
+    --axis-z: #6b6bff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Consolas', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 8px;
+    padding: 8px;
+}
+
+/* ===== TOP: KONTROLLZENTRUM ===== */
+#control-center {
+    background: #111;
+    border: 2px solid var(--fg);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+}
+
+.btn-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: #1a1a2a;
+}
+
+.btn-group label {
+    font-size: 11px;
+    color: #888;
+    margin-right: 4px;
+}
+
+.btn-trigger {
+    background: #222;
+    color: var(--fg);
+    border: 1px solid #444;
+    padding: 6px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    position: relative;
+}
+.btn-trigger:hover { background: #333; }
+.btn-trigger:active { transform: scale(0.95); }
+
+.btn-trigger.level1 { border-color: var(--level1); color: var(--level1); }
+.btn-trigger.level2 { border-color: var(--level2); color: var(--level2); }
+.btn-trigger.level3 { border-color: var(--level3); color: var(--level3); }
+
+.btn-trigger.active {
+    background: var(--fg);
+    color: #000;
+    box-shadow: 0 0 20px var(--fg);
+}
+
+.btn-trigger.axis-x { border-color: var(--axis-x); color: var(--axis-x); }
+.btn-trigger.axis-y { border-color: var(--axis-y); color: var(--axis-y); }
+.btn-trigger.axis-z { border-color: var(--axis-z); color: var(--axis-z); }
+
+.btn-trigger.axis-x.active { background: var(--axis-x); color: #000; }
+.btn-trigger.axis-y.active { background: var(--axis-y); color: #000; }
+.btn-trigger.axis-z.active { background: var(--axis-z); color: #000; }
+
+#status-bar {
+    margin-left: auto;
+    font-size: 12px;
+    color: #888;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #333;
+    transition: all 0.3s;
+}
+.status-dot.on { background: #0f0; box-shadow: 0 0 10px #0f0; }
+.status-dot.off { background: #f00; }
+
+/* ===== MIDDLE: EBENEN + GRID ===== */
+#layers {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    height: 100%;
+    min-height: 0;
+}
+
+.layer {
+    background: #0e0e1a;
+    border: 1px solid #222;
+    border-radius: 10px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.4s ease;
+}
+
+.layer-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-bottom: 1px solid #222;
+    margin-bottom: 6px;
+}
+
+.layer-1 .layer-header { color: var(--level1); border-color: var(--level1); }
+.layer-2 .layer-header { color: var(--level2); border-color: var(--level2); }
+.layer-3 .layer-header { color: var(--level3); border-color: var(--level3); }
+
+.layer-grid {
+    display: grid;
+    gap: 3px;
+    flex: 1;
+    align-content: start;
+}
+
+.layer-grid .cell {
+    aspect-ratio: 1;
+    border-radius: 4px;
+    background: #151525;
+    border: 1px solid #2a2a3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #666;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.layer-grid .cell.filled {
+    background: #1a2a3a;
+    border-color: #3a5a7a;
+    color: #aac;
+}
+
+.layer-grid .cell.active {
+    border-color: var(--fg);
+    box-shadow: 0 0 12px var(--fg);
+    transform: scale(1.05);
+    z-index: 2;
+}
+
+.layer-grid .cell.triggered {
+    animation: pulse-trigger 0.6s ease;
+}
+
+@keyframes pulse-trigger {
+    0% { transform: scale(1); box-shadow: 0 0 0 var(--fg); }
+    50% { transform: scale(1.3); box-shadow: 0 0 40px var(--fg); }
+    100% { transform: scale(1); box-shadow: 0 0 0 var(--fg); }
+}
+
+/* ===== BOTTOM: LOG / FEEDBACK ===== */
+#log {
+    background: #0a0a12;
+    border: 1px solid #1a1a2a;
+    border-radius: 8px;
+    padding: 8px 14px;
+    height: 70px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: #6a6a8a;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+#log .entry {
+    display: flex;
+    gap: 12px;
+    border-bottom: 1px solid #111;
+    padding: 2px 0;
+}
+#log .time { color: #444; width: 70px; flex-shrink: 0; }
+#log .msg { color: #8af; }
+#log .msg.level1 { color: var(--level1); }
+#log .msg.level2 { color: var(--level2); }
+#log .msg.level3 { color: var(--level3); }
+#log .msg.axis-x { color: var(--axis-x); }
+#log .msg.axis-y { color: var(--axis-y); }
+#log .msg.axis-z { color: var(--axis-z); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    #layers { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr 1fr; }
+    #control-center { flex-direction: column; align-items: stretch; }
+    #status-bar { margin-left: 0; justify-content: center; }
+}
 </style>
 </head>
 <body>
 
-<header>
-  <div>
-    <h1 style="margin:0">9hoch9 · ULTRA · Respo Engine</h1>
-    <div class="muted">Kompatibel mit 3×3 → 9×9 → 27×27 / φ‑Multiskala / meKI‑ready</div>
-  </div>
-  <div style="margin-left:auto" class="small">Version: interactive · Local only · Read‑only by default</div>
-</header>
+<!-- ===== KONTROLLZENTRUM ===== -->
+<div id="control-center">
+    <span style="font-weight:bold;color:var(--accent);">⚡ TRIGGER ENGINE</span>
 
-<section class="card">
-  <div class="controls">
-    <label>Level:
-      <select id="levelSelect">
-        <option value="1">3×3 (9)</option>
-        <option value="2" selected>9×9 (81)</option>
-        <option value="3">27×27 (729)</option>
-      </select>
-    </label>
-
-    <label>QI <input id="qi" type="range" min="0" max="1" step="0.01" value="0.65" /></label>
-    <label>IQQ <input id="iqq" type="range" min="0" max="1" step="0.01" value="0.35" /></label>
-
-    <label>Batch size:
-      <input id="batchSize" type="number" min="1" max="128" step="1" value="9" style="width:64px" />
-    </label>
-
-    <button id="genGrid" class="btn-primary">Erzeuge Grid</button>
-    <button id="autoFill" class="btn-primary">Auto‑Fill Respos</button>
-    <button id="discoverAxes">Discover Axes</button>
-    <button id="scoreAll">Score All</button>
-    <button id="exportJSON">Export JSON</button>
-
-    <label style="margin-left:auto"><input id="useMeKI" type="checkbox" /> meKI integration (wenn verfügbar)</label>
-  </div>
-
-  <div style="display:flex;gap:12px;margin-top:12px;align-items:flex-start">
-    <div id="grid" aria-label="Grid"></div>
-
-    <div id="detail" class="card">
-      <div><strong>Detail / Aktionen</strong></div>
-      <div id="cellInfo" style="margin-top:8px">Klicke eine Zelle für Edit / Score.</div>
-
-      <div style="margin-top:8px">
-        <div class="small">Top Candidates</div>
-        <div id="topList" style="max-height:220px;overflow:auto;margin-top:6px"></div>
-      </div>
-
-      <div style="margin-top:8px">
-        <div class="small">Multiskala (φ‑Gewichte)</div>
-        <div id="multiInfo" class="small">—</div>
-      </div>
-
-      <svg id="plot" width="300" height="300" viewBox="-150 -150 300 300" style="margin-top:8px">
-        <circle r="120" fill="none" stroke="#033"></circle>
-      </svg>
+    <!-- EBENEN-TRIGGER -->
+    <div class="btn-group">
+        <label>EBENEN</label>
+        <button class="btn-trigger level1" data-level="1">❶ Etage 1</button>
+        <button class="btn-trigger level2" data-level="2">❷ Etage 2</button>
+        <button class="btn-trigger level3" data-level="3">❸ Etage 3</button>
     </div>
-  </div>
 
-  <div class="book">
-    <h3>Buchbar & KI‑freundlich</h3>
-    <p class="small">
-      Dieses UI exportiert standardisiertes JSON für jede Respo (id, text, confs, eval, axis_presence, axis_score, final_score).
-      Die <code>application/ld+json</code> oben hilft meKI‑Agenten, das Modul zu entdecken. Wenn ein meKI Modul (meKI.js) vorliegt, wird es zur dynamischen QI/IQQ‑/axisWeight‑Schätzung verwendet.
-    </p>
-    <details>
-      <summary class="small">Pipeline (klick für Details)</summary>
-      <ol class="small">
-        <li>Discovery → Textsammlung aus Zellen</li>
-        <li>Normalisierung → default confs (0.5) falls leer</li>
-        <li>Eval → arg / xarg / arg3te (deine Formel)</li>
-        <li>Axis mapping → known keyword match + discovered clusters (TF‑IDF + KMeans)</li>
-        <li>Multiskala → φ‑Gewichte über Levels</li>
-        <li>Final → final_score = 0.6·arg3te + 0.4·axis_score (configurable)</li>
-      </ol>
-    </details>
-  </div>
-</section>
+    <!-- ACHSEN-TRIGGER -->
+    <div class="btn-group">
+        <label>ACHSEN</label>
+        <button class="btn-trigger axis-x" data-axis="x">X</button>
+        <button class="btn-trigger axis-y" data-axis="y">Y</button>
+        <button class="btn-trigger axis-z" data-axis="z">Z</button>
+    </div>
 
-<footer>
-  © 2026 iki1uc wieimmer — Export/Import JSON available — No external network calls by default.
-</footer>
+    <!-- GLOBALE TRIGGER -->
+    <div class="btn-group">
+        <label>GLOBAL</label>
+        <button class="btn-trigger" id="btn-sync">⟳ SYNC</button>
+        <button class="btn-trigger" id="btn-reset">⟲ RESET</button>
+        <button class="btn-trigger" id="btn-auto">▶ AUTO</button>
+    </div>
+
+    <!-- STATUS -->
+    <div id="status-bar">
+        <span>● <span id="status-text">idle</span></span>
+        <span class="status-dot off" id="status-dot"></span>
+        <span id="counter">0/0</span>
+    </div>
+</div>
+
+<!-- ===== EBENEN ===== -->
+<div id="layers">
+    <!-- Etage 1: 3×3 = 9 Zellen -->
+    <div class="layer layer-1" data-layer="1">
+        <div class="layer-header">
+            <span>❶ ETAGE 1 · 3×3</span>
+            <span id="layer-count-1">0/9</span>
+        </div>
+        <div class="layer-grid" id="grid-1" style="grid-template-columns:repeat(3,1fr);"></div>
+    </div>
+
+    <!-- Etage 2: 9×9 = 81 Zellen -->
+    <div class="layer layer-2" data-layer="2">
+        <div class="layer-header">
+            <span>❷ ETAGE 2 · 9×9</span>
+            <span id="layer-count-2">0/81</span>
+        </div>
+        <div class="layer-grid" id="grid-2" style="grid-template-columns:repeat(9,1fr);"></div>
+    </div>
+
+    <!-- Etage 3: 27×27 = 729 Zellen -->
+    <div class="layer layer-3" data-layer="3">
+        <div class="layer-header">
+            <span>❸ ETAGE 3 · 27×27</span>
+            <span id="layer-count-3">0/729</span>
+        </div>
+        <div class="layer-grid" id="grid-3" style="grid-template-columns:repeat(27,1fr);"></div>
+    </div>
+</div>
+
+<!-- ===== LOG ===== -->
+<div id="log">
+    <div class="entry"><span class="time">[INIT]</span><span class="msg">System bereit · 3 Ebenen · 3 Achsen</span></div>
+</div>
 
 <script type="module">
-/* 9hoch9 index — integrates with schnitt.js if present, else uses internal implementations.
-   Produces machine JSON suitable for meKI ingestion (if useMeKI checked).
-*/
+// ============================================================
+// 1. KONFIGURATION
+// ============================================================
+const LEVELS = {
+    1: { size: 3, total: 9,  gridId: 'grid-1', countId: 'layer-count-1' },
+    2: { size: 9, total: 81, gridId: 'grid-2', countId: 'layer-count-2' },
+    3: { size: 27, total: 729, gridId: 'grid-3', countId: 'layer-count-3' }
+};
 
-/* Config */
-const PHI = 1.61803398875;
-const DEFAULT_QI = 0.65, DEFAULT_IQQ = 0.35;
-const AXES_KNOWN = [
-  { name:'conceptual', keywords:['axiom','theory','concept','idea'] },
-  { name:'technical', keywords:['code','implementation','api','function','module'] },
-  { name:'repro', keywords:['example','reproduce','dataset','script','seed','steps'] },
-  { name:'usability', keywords:['guide','readme','usage','install','ui'] },
-  { name:'privacy', keywords:['email','pii','personal','secret','key','password'] },
-  { name:'performance', keywords:['perf','speed','optimi','latency','scale'] },
-  { name:'tests', keywords:['test','unit','assert','verify','expected'] },
-  { name:'ethics', keywords:['ethic','bias','impact','safety'] },
-  { name:'integration', keywords:['integrate','plugin','adapter','interop'] }
-];
+const AXES = ['x', 'y', 'z'];
 
-/* Utilities */
-const $ = id => document.getElementById(id);
-function clamp(v,a=0,b=1){ return Math.max(a, Math.min(b, v)); }
-function mean(arr){ return arr.length ? arr.reduce((s,x)=>s+x,0)/arr.length : 0; }
-function phiWeights(nMax){ const ws = Array.from({length:nMax+1},(_,n)=>Math.pow(1/PHI,n)); const s = ws.reduce((a,b)=>a+b,0); return ws.map(w=>w/s); }
+// ============================================================
+// 2. STATE
+// ============================================================
+const state = {
+    activeCells: {},      // { '1': Set, '2': Set, '3': Set }
+    triggeredCells: {},   // { '1': Set, '2': Set, '3': Set }
+    activeAxis: null,     // 'x' | 'y' | 'z' | null
+    activeLevel: null,    // 1 | 2 | 3 | null
+    autoMode: false,
+    timer: null,
+    log: []
+};
 
-/* Try to find external schnitt / helper module provided by you */
-let external = {};
-try { external.schnitt = await import('./schnitt.js'); } catch(e){ external.schnitt = null; }
+// Init Sets
+[1, 2, 3].forEach(l => {
+    state.activeCells[l] = new Set();
+    state.triggeredCells[l] = new Set();
+});
 
-/* Fallback implementations if not provided */
-function evalRespo(confs, QI, IQQ){
-  const base = mean(confs);
-  const maxc = Math.max(...confs), minc = Math.min(...confs);
-  const variance = maxc - minc;
-  const combined = clamp(QI*base + (1 - IQQ)*maxc);
-  const arg = combined;
-  const xarg = variance;
-  const arg3te = Number((combined * (1 - xarg)).toFixed(6));
-  return { base, maxc, minc, variance, arg, xarg, arg3te };
-}
+// ============================================================
+// 3. GRID BAUEN
+// ============================================================
+function buildGrid(level) {
+    const cfg = LEVELS[level];
+    const grid = document.getElementById(cfg.gridId);
+    grid.innerHTML = '';
+    const total = cfg.total;
 
-/* Simple TF‑IDF builder (lightweight) */
-function buildTfidf(corpus){
-  const docs = corpus.map(t => t.toLowerCase().replace(/[^\p{Letter}\p{Number}\s]/gu,' ').split(/\s+/).filter(Boolean));
-  const vocabMap = new Map();
-  docs.forEach(d=> d.forEach(w=> vocabMap.set(w, (vocabMap.get(w)||0)+1)));
-  const terms = Array.from(vocabMap.keys());
-  const docCount = docs.length;
-  const idf = terms.map(t => Math.log(docCount / (1 + docs.filter(d=>d.includes(t)).length)));
-  const vectors = docs.map(d=>{
-    const tf = terms.map(t => d.filter(x=>x===t).length / (d.length||1));
-    return tf.map((tfi,i)=>tfi * idf[i]);
-  });
-  return { terms, vectors };
-}
-function dot(a,b){ let s=0; for(let i=0;i<a.length;i++) s+=a[i]*b[i]; return s; }
-function norm(a){ let s=0; for(let i=0;i<a.length;i++) s+=a[i]*a[i]; return Math.sqrt(s)+1e-12; }
-function cosine(a,b){ return dot(a,b)/(norm(a)*norm(b)); }
-
-/* Simple kmeans (small K, naive) */
-function kmeans(vectors, K=6, maxIter=40){
-  const n = vectors.length;
-  const dim = vectors[0]?.length || 0;
-  if(n===0) return { labels: [], centroids: [] };
-  let centroids = [];
-  const picks = new Set();
-  while(centroids.length < Math.min(K,n)){
-    const r = Math.floor(Math.random()*n);
-    if(!picks.has(r)){ picks.add(r); centroids.push(vectors[r].slice()); }
-  }
-  let labels = new Array(n).fill(0);
-  for(let it=0; it<maxIter; it++){
-    for(let i=0;i<n;i++){
-      let best=0, bestSim=-Infinity;
-      for(let c=0;c<centroids.length;c++){
-        const sim = cosine(vectors[i], centroids[c]);
-        if(sim>bestSim){ bestSim = sim; best = c; }
-      }
-      labels[i]=best;
+    for (let i = 0; i < total; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        cell.dataset.level = level;
+        cell.textContent = i + 1;
+        cell.addEventListener('click', () => toggleCell(level, i));
+        grid.appendChild(cell);
     }
-    const sums = Array.from({length:centroids.length}, ()=> new Array(dim).fill(0));
-    const counts = new Array(centroids.length).fill(0);
-    for(let i=0;i<n;i++){ const l=labels[i]; counts[l]++; for(let d=0;d<dim;d++) sums[l][d] += vectors[i][d]; }
-    let moved = false;
-    for(let c=0;c<centroids.length;c++){
-      if(counts[c]===0) continue;
-      const newC = sums[c].map(v=>v/counts[c]);
-      let diff=0; for(let d=0; d<dim; d++) diff += Math.abs(newC[d]-centroids[c][d]||0);
-      if(diff>1e-6) moved=true;
-      centroids[c] = newC;
+    updateCount(level);
+}
+
+function toggleCell(level, index) {
+    const set = state.activeCells[level];
+    const cell = getCell(level, index);
+    if (set.has(index)) {
+        set.delete(index);
+        cell.classList.remove('filled', 'active');
+    } else {
+        set.add(index);
+        cell.classList.add('filled');
+        cell.classList.add('active');
+        // 3-Achsen-Effekt: Wenn Axis aktiv, zusätzliche Zellen triggern
+        if (state.activeAxis) {
+            triggerAxisEffect(level, index);
+        }
     }
-    if(!moved) break;
-  }
-  return { labels, centroids };
+    updateCount(level);
+    log(`Zelle ${index+1} auf Etage ${level} ${set.has(index) ? 'aktiviert' : 'deaktiviert'}`);
 }
 
-/* Axis discovery using TF‑IDF + KMeans */
-function discoverAxes(items, targetK=8){
-  const texts = items.map(i => i.text || '');
-  const tf = buildTfidf(texts);
-  if(tf.vectors.length === 0) return { axes: [], assignments: [] };
-  const K = Math.min(targetK, tf.vectors.length);
-  const { labels, centroids } = kmeans(tf.vectors, K);
-  const axes = centroids.map((c, idx) => {
-    // find top terms for centroid
-    const scores = tf.terms.map((t, i) => ({ t, score: c[i] || 0 })).sort((a,b)=>b.score-a.score);
-    const terms = scores.slice(0,6).map(s=>s.t);
-    return { id: `D${idx}`, label: terms.slice(0,3).join('-'), terms };
-  });
-  const assignments = items.map((it,i) => ({ id: it.id, axis: labels[i] }));
-  return { axes, assignments };
+function getCell(level, index) {
+    const cfg = LEVELS[level];
+    const grid = document.getElementById(cfg.gridId);
+    return grid.children[index];
 }
 
-/* Axis scoring: combine known + discovered */
-function computeAxisScore(item, knownAxes, discoveredAxes){
-  const t = (item.text||'').toLowerCase();
-  let scoreKnown = 0;
-  for(const ax of knownAxes){
-    if(ax.keywords.some(k => t.includes(k))) scoreKnown += 1;
-  }
-  let scoreDisc = 0;
-  for(const ax of discoveredAxes){
-    if(ax.terms.some(k => t.includes(k))) scoreDisc += 1;
-  }
-  const denom = knownAxes.length + Math.max(1, discoveredAxes.length);
-  return clamp((scoreKnown + scoreDisc) / denom);
+function updateCount(level) {
+    const cfg = LEVELS[level];
+    const count = state.activeCells[level].size;
+    document.getElementById(cfg.countId).textContent = `${count}/${cfg.total}`;
+    updateTotalCounter();
 }
 
-/* Geometry helpers */
-function coordsFromScores(arg3te, axisScore){
-  const theta = arg3te * Math.PI * 2;
-  const rho = 20 + axisScore * 120;
-  return { theta, rho, x: Math.cos(theta)*rho, y: Math.sin(theta)*rho, sector3: Math.floor(arg3te*3), sector4: Math.floor(arg3te*4) };
+function updateTotalCounter() {
+    const total = [1, 2, 3].reduce((sum, l) => sum + state.activeCells[l].size, 0);
+    document.getElementById('counter').textContent = `${total}/819`; // 9+81+729 = 819
 }
 
-/* DATA MODEL & UI state */
-let STATE = {
-  level: 2,      // default 9x9
-  side: 9,
-  items: [],     // {id,text,confs}
-  scored: null,
-  discoveredAxes: [],
-  useMeKI: false
-};
+// ============================================================
+// 4. TRIGGER-FUNKTIONEN
+// ============================================================
+function triggerLevel(level) {
+    const cfg = LEVELS[level];
+    const grid = document.getElementById(cfg.gridId);
+    const cells = grid.querySelectorAll('.cell');
+    const set = state.activeCells[level];
 
-/* UI helpers */
-function gridSizeForLevel(level){
-  const side = Math.pow(3, level);
-  return { side, count: side * side };
+    // Alle Zellen der Etage toggeln
+    cells.forEach((cell, i) => {
+        if (set.has(i)) {
+            set.delete(i);
+            cell.classList.remove('filled', 'active');
+        } else {
+            set.add(i);
+            cell.classList.add('filled', 'active');
+            // Trigger-Animation
+            cell.classList.remove('triggered');
+            void cell.offsetWidth;
+            cell.classList.add('triggered');
+        }
+    });
+
+    updateCount(level);
+    log(`🔴 Etage ${level} getriggert — ${cfg.total} Zellen`, `level${level}`);
+    document.getElementById('status-text').textContent = `Etage ${level} getriggert`;
+    document.getElementById('status-dot').className = 'status-dot on';
+    setTimeout(() => document.getElementById('status-dot').className = 'status-dot off', 1000);
 }
 
-function generateItemsForLevel(level){
-  const { side, count } = gridSizeForLevel(level);
-  const items = [];
-  for(let i=0;i<count;i++) items.push({ id: i, text: '', confs: [0.5,0.5,0.5] });
-  STATE.side = side;
-  STATE.items = items;
+function triggerAxis(axis) {
+    state.activeAxis = axis;
+    const axisColors = { x: 'axis-x', y: 'axis-y', z: 'axis-z' };
+
+    // Alle Zellen mit passenden Indizes aktivieren
+    [1, 2, 3].forEach(level => {
+        const cfg = LEVELS[level];
+        const size = cfg.size;
+        const set = state.activeCells[level];
+        const grid = document.getElementById(cfg.gridId);
+        const cells = grid.querySelectorAll('.cell');
+
+        cells.forEach((cell, i) => {
+            const row = Math.floor(i / size);
+            const col = i % size;
+            let match = false;
+            if (axis === 'x') match = col === 0 || col === size - 1 || col === Math.floor(size/2);
+            if (axis === 'y') match = row === 0 || row === size - 1 || row === Math.floor(size/2);
+            if (axis === 'z') match = (row + col) % 3 === 0;
+
+            if (match) {
+                set.add(i);
+                cell.classList.add('filled', 'active');
+                cell.classList.remove('triggered');
+                void cell.offsetWidth;
+                cell.classList.add('triggered');
+            } else {
+                // Nichts deaktivieren — nur hinzufügen
+            }
+        });
+        updateCount(level);
+    });
+
+    log(`📐 Achse ${axis.toUpperCase()} getriggert`, `axis-${axis}`);
+    document.getElementById('status-text').textContent = `Achse ${axis.toUpperCase()} aktiv`;
 }
 
-/* Render grid */
-function renderGrid(){
-  const grid = $('grid');
-  grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(${STATE.side}, ${Math.max(40, Math.floor(560/STATE.side))}px)`;
-  grid.style.width = `${Math.min(560, STATE.side * Math.max(40, Math.floor(560/STATE.side)) + (STATE.side-1)*4)}px`;
-  STATE.items.forEach((it, idx) => {
-    const el = document.createElement('div');
-    el.className = it.text ? 'cell' : 'cell empty';
-    el.textContent = it.text ? (it.text.slice(0,6)) : (idx+1);
-    el.onclick = () => openEditor(idx);
-    grid.appendChild(el);
-    it._el = el;
-  });
+function triggerSync() {
+    log('⟳ SYNC — Alle Ebenen synchronisieren');
+
+    // Gleiche Muster auf allen Ebenen erzeugen
+    // Pattern: Alle Zellen mit Index durch 3 teilbar
+    [1, 2, 3].forEach(level => {
+        const cfg = LEVELS[level];
+        const set = state.activeCells[level];
+        const grid = document.getElementById(cfg.gridId);
+        const cells = grid.querySelectorAll('.cell');
+
+        // Erst alle leeren
+        set.clear();
+        cells.forEach(c => c.classList.remove('filled', 'active', 'triggered'));
+
+        // Dann Muster: primzahlen-artig
+        cells.forEach((cell, i) => {
+            if (i % 3 === 0 || i % 7 === 0) {
+                set.add(i);
+                cell.classList.add('filled', 'active');
+                cell.classList.remove('triggered');
+                void cell.offsetWidth;
+                cell.classList.add('triggered');
+            }
+        });
+        updateCount(level);
+    });
+
+    document.getElementById('status-text').textContent = 'SYNC OK';
 }
 
-/* Editor for a cell */
-function openEditor(idx){
-  const it = STATE.items[idx];
-  $('cellInfo').innerHTML = `
-    <div><strong>Zelle ${idx+1}</strong></div>
-    <div style="margin-top:8px"><label>Text</label><br><textarea id="editText" style="width:100%;height:80px">${escapeHtml(it.text)}</textarea></div>
-    <div style="margin-top:8px">
-      <label>c1 <input id="c1" type="range" min="0" max="1" step="0.01" value="${it.confs[0]}" /></label>
-      <label>c2 <input id="c2" type="range" min="0" max="1" step="0.01" value="${it.confs[1]}" /></label>
-      <label>c3 <input id="c3" type="range" min="0" max="1" step="0.01" value="${it.confs[2]}" /></label>
-    </div>
-    <div style="margin-top:8px"><button id="saveCell">Speichern</button> <button id="clearCell">Leeren</button> <button id="scoreCell">Score</button></div>
-  `;
-  $('saveCell').onclick = () => { it.text = $('editText').value.trim(); it.confs = [Number($('c1').value), Number($('c2').value), Number($('c3').value)]; it._el.textContent = it.text ? it.text.slice(0,6) : (idx+1); $('cellInfo').textContent = 'Gespeichert.'; };
-  $('clearCell').onclick = () => { it.text=''; it.confs=[0.5,0.5,0.5]; it._el.textContent = idx+1; $('cellInfo').textContent='Geloescht.'; };
-  $('scoreCell').onclick = () => { const s = scoreSingle(it); renderScorePopup(s); };
+function triggerReset() {
+    [1, 2, 3].forEach(level => {
+        state.activeCells[level].clear();
+        const cfg = LEVELS[level];
+        const grid = document.getElementById(cfg.gridId);
+        grid.querySelectorAll('.cell').forEach(c => {
+            c.classList.remove('filled', 'active', 'triggered');
+        });
+        updateCount(level);
+    });
+    state.activeAxis = null;
+    document.getElementById('status-text').textContent = 'RESET';
+    log('⟲ RESET — Alle Ebenen zurückgesetzt');
 }
 
-function escapeHtml(s){ return (s||'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
-function renderScorePopup(s){
-  $('cellInfo').innerHTML = `<div><strong>Zelle ${s.id+1}</strong></div>
-  <pre>arg: ${s.eval.arg}\nxarg: ${s.eval.xarg}\narg3te: ${s.eval.arg3te}\naxis_score: ${s.axis_score.toFixed(3)}\nfinal: ${s.final_score.toFixed(4)}</pre>`;
+function toggleAuto() {
+    state.autoMode = !state.autoMode;
+    const btn = document.getElementById('btn-auto');
+    btn.classList.toggle('active', state.autoMode);
+    btn.textContent = state.autoMode ? '⏸ PAUSE' : '▶ AUTO';
+
+    if (state.autoMode) {
+        log('▶ AUTO-Modus gestartet');
+        state.timer = setInterval(() => {
+            const level = Math.floor(Math.random() * 3) + 1;
+            triggerLevel(level);
+        }, 2000);
+    } else {
+        clearInterval(state.timer);
+        log('⏸ AUTO-Modus pausiert');
+    }
 }
 
-/* Scoring pipeline (chunked) */
-let processing = { index: 0, timer: null };
-function scoreSingle(item){
-  const QI = Number($('qi').value), IQQ = Number($('iqq').value);
-  const e = evalRespo(item.confs || [0.5,0.5,0.5], QI, IQQ);
-  const axis_score = computeAxisScore(item, AXES_KNOWN, STATE.discoveredAxes || []);
-  const final = 0.6 * e.arg3te + 0.4 * axis_score;
-  return { id: item.id, text: item.text, confs: item.confs, eval: e, axis_score, final_score: Number(final.toFixed(6)), coords: coordsFromScores(e.arg3te, axis_score) };
+// ============================================================
+// 5. AXIS-EFFEKT (bei Zellenklick mit aktiver Achse)
+// ============================================================
+function triggerAxisEffect(level, index) {
+    const cfg = LEVELS[level];
+    const size = cfg.size;
+    const row = Math.floor(index / size);
+    const col = index % size;
+    const set = state.activeCells[level];
+    const grid = document.getElementById(cfg.gridId);
+    const cells = grid.querySelectorAll('.cell');
+
+    // Wir triggern verbundene Zellen basierend auf Axis
+    let neighbors = [];
+    if (state.activeAxis === 'x') {
+        // Alle in gleicher Spalte
+        for (let r = 0; r < size; r++) {
+            neighbors.push(r * size + col);
+        }
+    } else if (state.activeAxis === 'y') {
+        // Alle in gleicher Zeile
+        for (let c = 0; c < size; c++) {
+            neighbors.push(row * size + c);
+        }
+    } else if (state.activeAxis === 'z') {
+        // Diagonale
+        for (let d = -size; d < size; d++) {
+            const nr = row + d;
+            const nc = col + d;
+            if (nr >= 0 && nr < size && nc >= 0 && nc < size) {
+                neighbors.push(nr * size + nc);
+            }
+        }
+    }
+
+    neighbors.forEach(i => {
+        if (i !== index) {
+            set.add(i);
+            const cell = cells[i];
+            cell.classList.add('filled', 'active');
+            cell.classList.remove('triggered');
+            void cell.offsetWidth;
+            cell.classList.add('triggered');
+        }
+    });
+    updateCount(level);
 }
 
-function scoreAllChunked(onDone){
-  const batch = Number($('batchSize').value) || 9;
-  const items = STATE.items;
-  const QI = Number($('qi').value), IQQ = Number($('iqq').value);
-  const end = Math.min(items.length, processing.index + batch);
-  for(let i = processing.index; i < end; i++){
-    const s = scoreSingle(items[i]);
-    items[i].__scored = s;
-  }
-  processing.index = (end >= items.length) ? 0 : end;
-  if(processing.index === 0) {
-    onDone && onDone();
-  } else {
-    // schedule next chunk
-    processing.timer = requestAnimationFrame(()=> scoreAllChunked(onDone));
-  }
+// ============================================================
+// 6. LOG
+// ============================================================
+function log(msg, className = '') {
+    const logDiv = document.getElementById('log');
+    const entry = document.createElement('div');
+    entry.className = 'entry';
+    const time = new Date().toLocaleTimeString();
+    entry.innerHTML = `
+        <span class="time">[${time}]</span>
+        <span class="msg ${className}">${msg}</span>
+    `;
+    logDiv.appendChild(entry);
+    logDiv.scrollTop = logDiv.scrollHeight;
+    state.log.push({ time, msg, className });
+    if (state.log.length > 100) {
+        state.log.shift();
+        logDiv.removeChild(logDiv.firstChild);
+    }
 }
 
-/* render top list & plot */
-function renderTop(){
-  const scored = STATE.items.map(it => it.__scored).filter(Boolean);
-  const sorted = scored.sort((a,b)=>b.final_score - a.final_score);
-  $('topList').innerHTML = sorted.slice(0,30).map(s => `<div style="padding:6px;border-bottom:1px solid #022"><strong>#${s.id+1}</strong> final=${s.final_score.toFixed(3)} arg3te=${s.eval.arg3te.toFixed(3)}<div class="small">${escapeHtml((s.text||'').slice(0,120))}</div></div>`).join('');
-  renderPlot(sorted.slice(0,200));
-  // multiscale: trivial single-level for now
-  const meanFinal = scored.length ? mean(scored.map(s=>s.final_score)) : 0;
-  $('multiInfo').textContent = `Level ${STATE.level} mean final=${meanFinal.toFixed(4)}`;
-}
+// ============================================================
+// 7. EVENT BINDING
+// ============================================================
+document.querySelectorAll('.btn-trigger[data-level]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const level = parseInt(btn.dataset.level);
+        triggerLevel(level);
+        btn.classList.toggle('active');
+    });
+});
 
-function renderPlot(items){
-  const svg = $('plot');
-  while(svg.firstChild) svg.removeChild(svg.firstChild);
-  // circle frame
-  const frame = document.createElementNS('http://www.w3.org/2000/svg','circle');
-  frame.setAttribute('r',120); frame.setAttribute('stroke','#033'); frame.setAttribute('fill','none');
-  svg.appendChild(frame);
-  items.forEach(it=>{
-    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    const x = it.coords.x, y = it.coords.y;
-    c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', 6);
-    c.setAttribute('fill', it.final_score > 0.8 ? '#6f6' : it.final_score > 0.5 ? '#6cf' : '#444');
-    c.setAttribute('stroke','#022');
-    c.addEventListener('mouseenter', ()=> $('cellInfo').textContent = `#${it.id+1} final=${it.final_score.toFixed(3)}\n${it.text||''}`);
-    c.addEventListener('mouseleave', ()=> $('cellInfo').textContent = 'Klicke eine Zelle für Details.');
-    svg.appendChild(c);
-  });
-}
+document.querySelectorAll('.btn-trigger[data-axis]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const axis = btn.dataset.axis;
+        // Toggle: Wenn gleiche Achse, deaktivieren
+        if (state.activeAxis === axis) {
+            state.activeAxis = null;
+            btn.classList.remove('active');
+            log(`Achse ${axis.toUpperCase()} deaktiviert`);
+        } else {
+            document.querySelectorAll('.btn-trigger[data-axis]').forEach(b => b.classList.remove('active'));
+            state.activeAxis = axis;
+            btn.classList.add('active');
+            triggerAxis(axis);
+        }
+    });
+});
 
-/* Discover axes & update STATE.discoveredAxes */
-function runDiscover(){
-  const targetK = Math.min(12, Math.max(3, Math.floor(Math.sqrt(STATE.items.length))));
-  const { axes } = discoverAxes(STATE.items, targetK);
-  STATE.discoveredAxes = axes;
-  // present to user
-  $('cellInfo').innerHTML = `<div><strong>Discovered Axes (${axes.length})</strong></div>${axes.map(a=>`<div class="small">${a.id}: ${a.label} — ${a.terms.join(', ')}</div>`).join('')}`;
-}
+document.getElementById('btn-sync').addEventListener('click', triggerSync);
+document.getElementById('btn-reset').addEventListener('click', triggerReset);
+document.getElementById('btn-auto').addEventListener('click', toggleAuto);
 
-/* Export JSON */
-function exportJSON(){
-  const out = {
-    meta: { level: STATE.level, side: STATE.side, QI: Number($('qi').value), IQQ: Number($('iqq').value), timestamp: Date.now() },
-    items: STATE.items.map(it => ({ id: it.id, text: it.text, confs: it.confs, scored: it.__scored || null })),
-    discoveredAxes: STATE.discoveredAxes || []
-  };
-  const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a'); a.href = url; a.download = '9hoch9_respos.json'; a.click(); URL.revokeObjectURL(url);
-}
+// ============================================================
+// 8. TASTATUR-KURZBEFEHLE
+// ============================================================
+document.addEventListener('keydown', (e) => {
+    if (e.key === '1') triggerLevel(1);
+    if (e.key === '2') triggerLevel(2);
+    if (e.key === '3') triggerLevel(3);
+    if (e.key === 'x') document.querySelector('[data-axis="x"]').click();
+    if (e.key === 'y') document.querySelector('[data-axis="y"]').click();
+    if (e.key === 'z') document.querySelector('[data-axis="z"]').click();
+    if (e.key === 's') triggerSync();
+    if (e.key === 'r') triggerReset();
+    if (e.key === ' ') { e.preventDefault(); toggleAuto(); }
+});
 
-/* Auto‑fill sample content to speed testing */
-function autoFill(){
-  STATE.items.forEach((it, idx) => {
-    it.text = `Respo ${idx+1} sample ${(idx%7===0)?'example':''} ${(idx%11===0)?'test':''}`;
-    it.confs = [+(0.4 + Math.random()*0.6).toFixed(2), +(0.4 + Math.random()*0.6).toFixed(2), +(0.4 + Math.random()*0.6).toFixed(2)];
-    if(it._el) it._el.textContent = it.text.slice(0,6);
-  });
-  $('cellInfo').textContent = 'Auto‑Fill done.';
-}
+// ============================================================
+// 9. INIT
+// ============================================================
+[1, 2, 3].forEach(level => buildGrid(level));
 
-/* Button wiring */
-$('genGrid').onclick = () => {
-  const lvl = Number($('levelSelect').value);
-  STATE.level = lvl;
-  const { side, count } = gridSizeForLevel(lvl);
-  generateItemsForLevel(lvl);
-  renderGrid();
-  $('cellInfo').textContent = `Grid ${side}×${side} erzeugt (${STATE.items.length} Zellen).`;
-};
-$('autoFill').onclick = () => autoFill();
-$('discoverAxes').onclick = () => runDiscover();
-$('scoreAll').onclick = () => {
-  if(processing.timer) cancelAnimationFrame(processing.timer);
-  processing.index = 0;
-  scoreAllChunked(()=> { renderTop(); $('cellInfo').textContent = 'Scoring abgeschlossen.'; });
-};
-$('exportJSON').onclick = () => exportJSON();
-$('useMeKI').onchange = (e) => { STATE.useMeKI = e.target.checked; $('cellInfo').textContent = `meKI ${STATE.useMeKI ? 'aktiv' : 'deaktiviert'}`; };
+// Initial ein paar Zellen aktivieren für Demo
+setTimeout(() => {
+    [1, 2, 3].forEach(level => {
+        const cfg = LEVELS[level];
+        const set = state.activeCells[level];
+        const grid = document.getElementById(cfg.gridId);
+        const cells = grid.querySelectorAll('.cell');
+        // Muster: jede 3. Zelle
+        cells.forEach((cell, i) => {
+            if (i % 3 === 0) {
+                set.add(i);
+                cell.classList.add('filled');
+            }
+        });
+        updateCount(level);
+    });
+    log('⚡ Initiales Muster geladen (jede 3. Zelle)');
+}, 100);
 
-/* Initialize default 9x9 */
-$('genGrid').click();
-
-/* If an external schnitt (schnitt.js or other modules) provide functions,
-   prefer them (e.g. external.schnitt.evalRespo etc.). This keeps backward compatibility. */
-if(external.schnitt){
-  console.info('External schnitt module loaded — delegating some functions if present.');
-  if(external.schnitt.evalRespo) evalRespo = external.schnitt.evalRespo;
-  if(external.schnitt.discoverAxes) discoverAxes = external.schnitt.discoverAxes;
-  if(external.schnitt.scoreSingle) scoreSingle = external.schnitt.scoreSingle;
-}
+console.log('⚡ RESPO TRIGGER ENGINE geladen');
+console.log('⌨️  1,2,3 = Etagen  |  x,y,z = Achsen  |  s = Sync  |  r = Reset  |  space = Auto');
 
 </script>
 </body>
