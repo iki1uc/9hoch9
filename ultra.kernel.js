@@ -49,3 +49,12 @@ class ULTRA_KERNEL {
 }
 
 window.ULTRA_KERNEL = new ULTRA_KERNEL();
+// ultra.kernel.js
+import { engineState, evaluateFromSegments } from "./rith.engine.js";
+
+export const KERNEL = {
+  rith: engineState,
+  runRithPipeline(segmentStrings) {
+    return evaluateFromSegments(segmentStrings);
+  }
+};
